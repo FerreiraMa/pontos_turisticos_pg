@@ -1,20 +1,21 @@
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.viewsets import ModelViewSet
 from core.models import PontoTuristico
 from .serializers import PontoTuristicoSerializer
+from django.http import HttpResponse
 
 class PontoTuristicoViewSet(ModelViewSet):
     #queryset = PontoTuristico.objects.all()
     serializer_class = PontoTuristicoSerializer
     filter_backends = (SearchFilter,)
     # permission_classes = (IsAdminUser,)
-    # permission_classes = (IsAuthenticatedOrReadOnly,)
+    permission_classes = (IsAuthenticatedOrReadOnly,)
     # permission_classes = (DjangoModelPermissions,)
-    permission_classes = (IsAuthenticated,)
-    authentication_classes = (TokenAuthentication,)
+    #permission_classes = (IsAuthenticated,)
+    #authentication_classes = (TokenAuthentication,)
     search_fields = ('nome', 'descricao', 'endereco__linha1')
     lookup_field = 'id'  # somente para valores únicos no banco de dados
 
@@ -59,3 +60,14 @@ class PontoTuristicoViewSet(ModelViewSet):
     @action(methods=['get'], detail=False)
     def teste(self, request):
         pass
+
+    @action(methods=['get'], detail=True)
+    def associa_atracoes(self, request, id):
+        atracoes = request.data['ids']
+
+        ponto = PontoTuristico.objects.get(id=id)
+
+        ponto.atracoes.set(atracoes)
+
+        ponto.save()
+        return HttpResponse('Ok')
